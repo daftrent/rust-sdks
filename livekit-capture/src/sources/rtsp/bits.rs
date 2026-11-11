@@ -181,7 +181,7 @@ mod tests {
         let mut reader = BitReader::new(&[0b1011_0001, 0b1000_0000]);
         assert_eq!(reader.read_bit(), Some(1));
         assert_eq!(reader.read_bits(3), Some(0b011));
-        assert_eq!(reader.read_bits(5), Some(0b0001_1));
+        assert_eq!(reader.read_bits(5), Some(0b0_0011));
         assert!(reader.skip_bits(7).is_some());
         assert_eq!(reader.read_bit(), None);
     }

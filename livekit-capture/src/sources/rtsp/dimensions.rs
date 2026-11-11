@@ -395,7 +395,7 @@ mod tests {
 
     impl BitWriter {
         fn push_bit(&mut self, bit: u32) {
-            if self.bit_offset % 8 == 0 {
+            if self.bit_offset.is_multiple_of(8) {
                 self.bytes.push(0);
             }
             let byte = self.bytes.last_mut().unwrap();
@@ -419,7 +419,7 @@ mod tests {
         fn finish(mut self) -> Vec<u8> {
             // rbsp_stop_one_bit and alignment.
             self.push_bit(1);
-            while self.bit_offset % 8 != 0 {
+            while !self.bit_offset.is_multiple_of(8) {
                 self.push_bit(0);
             }
             self.bytes
