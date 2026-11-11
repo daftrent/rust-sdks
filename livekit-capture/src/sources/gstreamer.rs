@@ -536,16 +536,17 @@ impl GStreamerVideoSource {
     fn observe_access_unit(&mut self, unit: &OwnedEncodedAccessUnit) -> bool {
         if let Some(last) = self.last_timestamp_us {
             let threshold = self.frame_interval_us.saturating_mul(2);
-            if threshold > 0 && unit.timestamp_us >= last.saturating_add(threshold) {
-                if !self.recovering_from_gap {
-                    log::warn!(
-                        "GStreamer appsink dropped buffers (timestamp jump {} -> {}); requesting keyframe",
-                        last,
-                        unit.timestamp_us,
-                    );
-                    self.recovering_from_gap = true;
-                    self.request_keyframe_inherent();
-                }
+            if threshold > 0
+                && unit.timestamp_us >= last.saturating_add(threshold)
+                && !self.recovering_from_gap
+            {
+                log::warn!(
+                    "GStreamer appsink dropped buffers (timestamp jump {} -> {}); requesting keyframe",
+                    last,
+                    unit.timestamp_us,
+                );
+                self.recovering_from_gap = true;
+                self.request_keyframe_inherent();
             }
         }
         if self.recovering_from_gap {
