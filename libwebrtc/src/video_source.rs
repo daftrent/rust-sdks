@@ -140,19 +140,21 @@ pub mod native {
             frame_metadata: Option<FrameMetadata>,
         ) -> bool {
             let pixel_format = if pixel_format == 0 {
-                DmaBufPixelFormat::NV12
+                DmaBufPixelFormat::Nv12
             } else {
-                DmaBufPixelFormat::YUV420M
+                DmaBufPixelFormat::Yuv420m
             };
             self.handle.capture_frame(&VideoFrame {
                 rotation: VideoRotation::VideoRotation0,
                 timestamp_us,
                 frame_metadata,
-                buffer: NativeBuffer::from_dmabuf(
-                    dmabuf_fd,
-                    VideoResolution { width, height },
-                    pixel_format,
-                ),
+                // SAFETY: This deprecated compatibility API has always
+                // required the caller to keep the DMA buffer alive while
+                // WebRTC uses it. It cannot expose the newer release callback,
+                // so preserve that contract with a no-op callback.
+                buffer: unsafe {
+                    NativeBuffer::from_dmabuf(dmabuf_fd, width, height, pixel_format, || {})
+                },
             })
         }
 
