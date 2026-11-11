@@ -56,6 +56,11 @@ pub fn new_video_frame_buffer(
     }
 }
 
+#[cfg(target_os = "linux")]
+pub fn remove_dmabuf_surface_cache_entry(dmabuf_fd: i32) {
+    vfb_sys::ffi::remove_dmabuf_surface_cache_entry(dmabuf_fd)
+}
+
 impl From<vf_sys::ffi::VideoRotation> for VideoRotation {
     fn from(rotation: vf_sys::ffi::VideoRotation) -> Self {
         match rotation {
@@ -167,26 +172,29 @@ impl NativeBuffer {
     }
 
     #[cfg(target_os = "linux")]
-    pub fn from_dmabuf(
-        dmabuf_fd: vf::native::DmaBufFileDescriptor,
-        resolution: crate::video_source::VideoResolution,
-        pixel_format: vf::native::DmaBufPixelFormat,
+    pub unsafe fn from_dmabuf(
+        dmabuf_fd: i32,
+        width: u32,
+        height: u32,
+        format: vf::native::DmaBufPixelFormat,
+        on_release: Box<dyn FnOnce() + Send>,
     ) -> vf::native::NativeBuffer {
         vf::native::NativeBuffer {
             handle: NativeBuffer {
                 sys_handle: vfb_sys::ffi::new_native_buffer_from_dmabuf(
                     dmabuf_fd,
-                    resolution.width as i32,
-                    resolution.height as i32,
-                    pixel_format as i32,
+                    width,
+                    height,
+                    format as i32,
+                    Box::new(vfb_sys::DmaBufReleaseHook::new(on_release)),
                 ),
             },
         }
     }
 
     #[cfg(target_os = "linux")]
-    pub fn get_dmabuf_fd(&self) -> Option<vf::native::DmaBufFileDescriptor> {
-        let fd = vfb_sys::ffi::native_buffer_to_dmabuf_fd(&self.sys_handle);
+    pub fn dmabuf_fd(&self) -> Option<i32> {
+        let fd = vfb_sys::ffi::native_buffer_dmabuf_fd(&self.sys_handle);
         (fd >= 0).then_some(fd)
     }
 

@@ -200,8 +200,9 @@ message FfiRequest {
     StopAudioPlayoutRequest stop_audio_playout = 95;
     AttachAudioPlayoutTrackRequest attach_audio_playout_track = 96;
     DetachAudioPlayoutTrackRequest detach_audio_playout_track = 97;
+    ListCaptureDevicesRequest list_capture_devices = 98;
 
-    // NEXT_ID: 98
+    // NEXT_ID: 99
   }
 }
 
@@ -345,8 +346,9 @@ message FfiResponse {
     StopAudioPlayoutResponse stop_audio_playout = 95;
     AttachAudioPlayoutTrackResponse attach_audio_playout_track = 96;
     DetachAudioPlayoutTrackResponse detach_audio_playout_track = 97;
+    ListCaptureDevicesResponse list_capture_devices = 98;
 
-    // NEXT_ID: 98
+    // NEXT_ID: 99
   }
 }
 
@@ -423,8 +425,9 @@ message FfiEvent {
     StopAudioPlayoutCallback stop_audio_playout = 51;
     AttachAudioPlayoutTrackCallback attach_audio_playout_track = 52;
     DetachAudioPlayoutTrackCallback detach_audio_playout_track = 53;
+    ListCaptureDevicesCallback list_capture_devices = 54;
 
-    // NEXT_ID: 54
+    // NEXT_ID: 55
   }
 }
 

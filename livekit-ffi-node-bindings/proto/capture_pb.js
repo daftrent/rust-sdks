@@ -22,8 +22,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 const { proto2 } = require("@bufbuild/protobuf");
 const { OwnedVideoSource, VideoCodec, VideoSourceResolution } = require("./video_frame_pb.js");
-const { TrackPublishOptions } = require("./room_pb.js");
+const { OwnedAudioSource } = require("./audio_frame_pb.js");
 const { FfiOwnedHandle } = require("./handle_pb.js");
+const { TrackPublishOptions } = require("./room_pb.js");
 
 /**
  * Bitrate unit expected by a GStreamer encoder property.
@@ -48,6 +49,24 @@ const Pattern = /*@__PURE__*/ proto2.makeEnum(
   [
     {no: 0, name: "PATTERN_GRADIENT", localName: "GRADIENT"},
     {no: 1, name: "PATTERN_LOGO", localName: "LOGO"},
+  ],
+);
+
+/**
+ * @generated from enum livekit.proto.DeviceFrameFormat
+ */
+const DeviceFrameFormat = /*@__PURE__*/ proto2.makeEnum(
+  "livekit.proto.DeviceFrameFormat",
+  [
+    {no: 0, name: "DEVICE_FRAME_FORMAT_I420", localName: "I420"},
+    {no: 1, name: "DEVICE_FRAME_FORMAT_NV12", localName: "NV12"},
+    {no: 2, name: "DEVICE_FRAME_FORMAT_BGRA", localName: "BGRA"},
+    {no: 3, name: "DEVICE_FRAME_FORMAT_RGB24", localName: "RGB24"},
+    {no: 4, name: "DEVICE_FRAME_FORMAT_BGR24", localName: "BGR24"},
+    {no: 5, name: "DEVICE_FRAME_FORMAT_YUYV", localName: "YUYV"},
+    {no: 6, name: "DEVICE_FRAME_FORMAT_UYVY", localName: "UYVY"},
+    {no: 7, name: "DEVICE_FRAME_FORMAT_GREY", localName: "GREY"},
+    {no: 8, name: "DEVICE_FRAME_FORMAT_MJPEG", localName: "MJPEG"},
   ],
 );
 
@@ -121,6 +140,209 @@ const GstreamerVideoSourceConfig = /*@__PURE__*/ proto2.makeMessageType(
 );
 
 /**
+ * PCM S16LE interleaved ingest from `appsink name=lk_audio_appsink`.
+ *
+ * @generated from message livekit.proto.GstreamerAudioSourceConfig
+ */
+const GstreamerAudioSourceConfig = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.GstreamerAudioSourceConfig",
+  () => [
+    { no: 1, name: "pipeline", kind: "scalar", T: 9 /* ScalarType.STRING */, req: true },
+    { no: 2, name: "sample_rate", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true, default: 48000 },
+    { no: 3, name: "num_channels", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true, default: 1 },
+    { no: 4, name: "frame_duration_ms", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true, default: 10 },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.AudioCaptureSourceInfo
+ */
+const AudioCaptureSourceInfo = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.AudioCaptureSourceInfo",
+  () => [
+    { no: 1, name: "sample_rate", kind: "scalar", T: 13 /* ScalarType.UINT32 */, req: true },
+    { no: 2, name: "num_channels", kind: "scalar", T: 13 /* ScalarType.UINT32 */, req: true },
+    { no: 3, name: "samples_per_channel", kind: "scalar", T: 13 /* ScalarType.UINT32 */, req: true },
+    { no: 4, name: "audio_source", kind: "message", T: OwnedAudioSource, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.OwnedAudioCaptureSource
+ */
+const OwnedAudioCaptureSource = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.OwnedAudioCaptureSource",
+  () => [
+    { no: 1, name: "handle", kind: "message", T: FfiOwnedHandle, req: true },
+    { no: 2, name: "info", kind: "message", T: AudioCaptureSourceInfo, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.NewAudioCaptureSourceRequest
+ */
+const NewAudioCaptureSourceRequest = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.NewAudioCaptureSourceRequest",
+  () => [
+    { no: 1, name: "gstreamer", kind: "message", T: GstreamerAudioSourceConfig, req: true },
+    { no: 2, name: "request_async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.NewAudioCaptureSourceResponse
+ */
+const NewAudioCaptureSourceResponse = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.NewAudioCaptureSourceResponse",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.NewAudioCaptureSourceCallback
+ */
+const NewAudioCaptureSourceCallback = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.NewAudioCaptureSourceCallback",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 2, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "message" },
+    { no: 3, name: "source", kind: "message", T: OwnedAudioCaptureSource, oneof: "message" },
+  ],
+);
+
+/**
+ * Mixed PCM playout from existing remote audio track handles into
+ * `appsrc name=lk_audio_appsrc`.
+ *
+ * @generated from message livekit.proto.NewAudioPlayoutRequest
+ */
+const NewAudioPlayoutRequest = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.NewAudioPlayoutRequest",
+  () => [
+    { no: 1, name: "pipeline", kind: "scalar", T: 9 /* ScalarType.STRING */, req: true },
+    { no: 2, name: "track_handles", kind: "scalar", T: 4 /* ScalarType.UINT64 */, repeated: true },
+    { no: 3, name: "sample_rate", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true, default: 48000 },
+    { no: 4, name: "num_channels", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true, default: 1 },
+    { no: 5, name: "frame_duration_ms", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true, default: 10 },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.NewAudioPlayoutResponse
+ */
+const NewAudioPlayoutResponse = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.NewAudioPlayoutResponse",
+  () => [
+    { no: 1, name: "playout", kind: "message", T: FfiOwnedHandle, opt: true },
+    { no: 2, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.AttachAudioPlayoutTrackRequest
+ */
+const AttachAudioPlayoutTrackRequest = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.AttachAudioPlayoutTrackRequest",
+  () => [
+    { no: 1, name: "playout_handle", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 2, name: "track_handle", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 3, name: "request_async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.AttachAudioPlayoutTrackResponse
+ */
+const AttachAudioPlayoutTrackResponse = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.AttachAudioPlayoutTrackResponse",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.AttachAudioPlayoutTrackCallback
+ */
+const AttachAudioPlayoutTrackCallback = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.AttachAudioPlayoutTrackCallback",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 2, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "track_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.DetachAudioPlayoutTrackRequest
+ */
+const DetachAudioPlayoutTrackRequest = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.DetachAudioPlayoutTrackRequest",
+  () => [
+    { no: 1, name: "playout_handle", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 2, name: "track_id", kind: "scalar", T: 9 /* ScalarType.STRING */, req: true },
+    { no: 3, name: "request_async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.DetachAudioPlayoutTrackResponse
+ */
+const DetachAudioPlayoutTrackResponse = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.DetachAudioPlayoutTrackResponse",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.DetachAudioPlayoutTrackCallback
+ */
+const DetachAudioPlayoutTrackCallback = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.DetachAudioPlayoutTrackCallback",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 2, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "detached", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.StopAudioPlayoutRequest
+ */
+const StopAudioPlayoutRequest = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.StopAudioPlayoutRequest",
+  () => [
+    { no: 1, name: "playout_handle", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 2, name: "request_async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.StopAudioPlayoutResponse
+ */
+const StopAudioPlayoutResponse = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.StopAudioPlayoutResponse",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.StopAudioPlayoutCallback
+ */
+const StopAudioPlayoutCallback = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.StopAudioPlayoutCallback",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 2, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "frames_pushed", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+    { no: 4, name: "frames_dropped", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+    { no: 5, name: "bytes_pushed", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+  ],
+);
+
+/**
  * Test pattern rendered on the GPU.
  *
  * @generated from message livekit.proto.PatternVideoSourceConfig
@@ -145,6 +367,124 @@ const ClockVideoSourceConfig = /*@__PURE__*/ proto2.makeMessageType(
   () => [
     { no: 1, name: "resolution", kind: "message", T: VideoSourceResolution, req: true },
     { no: 2, name: "framerate_fps", kind: "scalar", T: 13 /* ScalarType.UINT32 */, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.DeviceFormat
+ */
+const DeviceFormat = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.DeviceFormat",
+  () => [
+    { no: 1, name: "resolution", kind: "message", T: VideoSourceResolution, req: true },
+    { no: 2, name: "framerate_fps", kind: "scalar", T: 13 /* ScalarType.UINT32 */, req: true },
+    { no: 3, name: "frame_format", kind: "enum", T: proto2.getEnumType(DeviceFrameFormat), req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.DeviceFormatRequest
+ */
+const DeviceFormatRequest = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.DeviceFormatRequest",
+  () => [
+    { no: 1, name: "exact", kind: "message", T: DeviceFormat, oneof: "request" },
+    { no: 2, name: "closest", kind: "message", T: DeviceFormat, oneof: "request" },
+    { no: 3, name: "highest_framerate", kind: "message", T: DeviceFormatRequest_HighestFramerate, oneof: "request" },
+    { no: 4, name: "highest_resolution", kind: "message", T: DeviceFormatRequest_HighestResolution, oneof: "request" },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.DeviceFormatRequest.HighestFramerate
+ */
+const DeviceFormatRequest_HighestFramerate = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.DeviceFormatRequest.HighestFramerate",
+  () => [
+    { no: 1, name: "resolution", kind: "message", T: VideoSourceResolution, opt: true },
+    { no: 2, name: "frame_format", kind: "enum", T: proto2.getEnumType(DeviceFrameFormat), opt: true },
+  ],
+  {localName: "DeviceFormatRequest_HighestFramerate"},
+);
+
+/**
+ * @generated from message livekit.proto.DeviceFormatRequest.HighestResolution
+ */
+const DeviceFormatRequest_HighestResolution = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.DeviceFormatRequest.HighestResolution",
+  () => [
+    { no: 1, name: "framerate_fps", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 2, name: "frame_format", kind: "enum", T: proto2.getEnumType(DeviceFrameFormat), opt: true },
+  ],
+  {localName: "DeviceFormatRequest_HighestResolution"},
+);
+
+/**
+ * @generated from message livekit.proto.DeviceVideoSourceConfig
+ */
+const DeviceVideoSourceConfig = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.DeviceVideoSourceConfig",
+  () => [
+    { no: 1, name: "device_index", kind: "scalar", T: 13 /* ScalarType.UINT32 */, oneof: "device" },
+    { no: 2, name: "device_id", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "device" },
+    { no: 3, name: "format", kind: "message", T: DeviceFormatRequest, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.CaptureDeviceInfo
+ */
+const CaptureDeviceInfo = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.CaptureDeviceInfo",
+  () => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */, req: true },
+    { no: 2, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */, req: true },
+    { no: 3, name: "model_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "manufacturer", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 5, name: "formats", kind: "message", T: DeviceFormat, repeated: true },
+    { no: 6, name: "formats_complete", kind: "scalar", T: 8 /* ScalarType.BOOL */, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.CaptureDeviceList
+ */
+const CaptureDeviceList = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.CaptureDeviceList",
+  () => [
+    { no: 1, name: "devices", kind: "message", T: CaptureDeviceInfo, repeated: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.ListCaptureDevicesRequest
+ */
+const ListCaptureDevicesRequest = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.ListCaptureDevicesRequest",
+  () => [
+    { no: 1, name: "request_async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.ListCaptureDevicesResponse
+ */
+const ListCaptureDevicesResponse = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.ListCaptureDevicesResponse",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+  ],
+);
+
+/**
+ * @generated from message livekit.proto.ListCaptureDevicesCallback
+ */
+const ListCaptureDevicesCallback = /*@__PURE__*/ proto2.makeMessageType(
+  "livekit.proto.ListCaptureDevicesCallback",
+  () => [
+    { no: 1, name: "async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
+    { no: 2, name: "error", kind: "scalar", T: 9 /* ScalarType.STRING */, oneof: "message" },
+    { no: 3, name: "devices", kind: "message", T: CaptureDeviceList, oneof: "message" },
   ],
 );
 
@@ -187,6 +527,7 @@ const NewCaptureSourceRequest = /*@__PURE__*/ proto2.makeMessageType(
   () => [
     { no: 1, name: "gstreamer", kind: "message", T: GstreamerVideoSourceConfig, oneof: "config" },
     { no: 2, name: "pattern", kind: "message", T: PatternVideoSourceConfig, oneof: "config" },
+    { no: 4, name: "device", kind: "message", T: DeviceVideoSourceConfig, oneof: "config" },
     { no: 5, name: "clock", kind: "message", T: ClockVideoSourceConfig, oneof: "config" },
     { no: 3, name: "request_async_id", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
   ],
@@ -291,6 +632,10 @@ const CaptureFinished = /*@__PURE__*/ proto2.makeMessageType(
   () => [
     { no: 1, name: "frames_captured", kind: "scalar", T: 4 /* ScalarType.UINT64 */, req: true },
     { no: 2, name: "exit", kind: "enum", T: proto2.getEnumType(CaptureExit), req: true },
+    { no: 3, name: "samples_captured", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+    { no: 4, name: "bytes_captured", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+    { no: 5, name: "first_timestamp_ns", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
+    { no: 6, name: "last_timestamp_ns", kind: "scalar", T: 4 /* ScalarType.UINT64 */, opt: true },
   ],
 );
 
@@ -322,13 +667,41 @@ const JoinCaptureCallback = /*@__PURE__*/ proto2.makeMessageType(
 
 exports.GstreamerBitrateUnit = GstreamerBitrateUnit;
 exports.Pattern = Pattern;
+exports.DeviceFrameFormat = DeviceFrameFormat;
 exports.CaptureSourceKind = CaptureSourceKind;
 exports.CaptureExit = CaptureExit;
 exports.CaptureErrorKind = CaptureErrorKind;
 exports.GstreamerRateControl = GstreamerRateControl;
 exports.GstreamerVideoSourceConfig = GstreamerVideoSourceConfig;
+exports.GstreamerAudioSourceConfig = GstreamerAudioSourceConfig;
+exports.AudioCaptureSourceInfo = AudioCaptureSourceInfo;
+exports.OwnedAudioCaptureSource = OwnedAudioCaptureSource;
+exports.NewAudioCaptureSourceRequest = NewAudioCaptureSourceRequest;
+exports.NewAudioCaptureSourceResponse = NewAudioCaptureSourceResponse;
+exports.NewAudioCaptureSourceCallback = NewAudioCaptureSourceCallback;
+exports.NewAudioPlayoutRequest = NewAudioPlayoutRequest;
+exports.NewAudioPlayoutResponse = NewAudioPlayoutResponse;
+exports.AttachAudioPlayoutTrackRequest = AttachAudioPlayoutTrackRequest;
+exports.AttachAudioPlayoutTrackResponse = AttachAudioPlayoutTrackResponse;
+exports.AttachAudioPlayoutTrackCallback = AttachAudioPlayoutTrackCallback;
+exports.DetachAudioPlayoutTrackRequest = DetachAudioPlayoutTrackRequest;
+exports.DetachAudioPlayoutTrackResponse = DetachAudioPlayoutTrackResponse;
+exports.DetachAudioPlayoutTrackCallback = DetachAudioPlayoutTrackCallback;
+exports.StopAudioPlayoutRequest = StopAudioPlayoutRequest;
+exports.StopAudioPlayoutResponse = StopAudioPlayoutResponse;
+exports.StopAudioPlayoutCallback = StopAudioPlayoutCallback;
 exports.PatternVideoSourceConfig = PatternVideoSourceConfig;
 exports.ClockVideoSourceConfig = ClockVideoSourceConfig;
+exports.DeviceFormat = DeviceFormat;
+exports.DeviceFormatRequest = DeviceFormatRequest;
+exports.DeviceFormatRequest_HighestFramerate = DeviceFormatRequest_HighestFramerate;
+exports.DeviceFormatRequest_HighestResolution = DeviceFormatRequest_HighestResolution;
+exports.DeviceVideoSourceConfig = DeviceVideoSourceConfig;
+exports.CaptureDeviceInfo = CaptureDeviceInfo;
+exports.CaptureDeviceList = CaptureDeviceList;
+exports.ListCaptureDevicesRequest = ListCaptureDevicesRequest;
+exports.ListCaptureDevicesResponse = ListCaptureDevicesResponse;
+exports.ListCaptureDevicesCallback = ListCaptureDevicesCallback;
 exports.CaptureSourceInfo = CaptureSourceInfo;
 exports.OwnedCaptureSource = OwnedCaptureSource;
 exports.NewCaptureSourceRequest = NewCaptureSourceRequest;

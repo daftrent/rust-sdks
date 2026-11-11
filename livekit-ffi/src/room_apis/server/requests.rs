@@ -1531,6 +1531,8 @@ pub fn handle_request(
         Request::StopCapture(req) => capture::on_stop_capture(server, req)?.into(),
         #[cfg(feature = "capture")]
         Request::JoinCapture(req) => capture::on_join_capture(server, req)?.into(),
+        #[cfg(feature = "capture-device")]
+        Request::ListCaptureDevices(req) => capture::on_list_capture_devices(server, req)?.into(),
         #[cfg(feature = "capture-gstreamer")]
         Request::NewAudioCaptureSource(req) => {
             capture::on_new_audio_capture_source(server, req)?.into()
@@ -1554,6 +1556,12 @@ pub fn handle_request(
         | Request::JoinCapture(_) => {
             return Err(FfiError::InvalidRequest(
                 "livekit-ffi was built without the 'capture' feature".into(),
+            ));
+        }
+        #[cfg(not(feature = "capture-device"))]
+        Request::ListCaptureDevices(_) => {
+            return Err(FfiError::InvalidRequest(
+                "livekit-ffi was built without the 'capture-device' feature".into(),
             ));
         }
         #[cfg(not(feature = "capture-gstreamer"))]

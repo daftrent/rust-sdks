@@ -44,7 +44,7 @@ pub enum H26xParseError {
 const ANNEX_B_START_CODE: [u8; 4] = [0, 0, 0, 1];
 
 /// Upper bound on bytes buffered while waiting for an access-unit boundary.
-const MAX_PENDING_ACCESS_UNIT_BYTES: usize = 32 * 1024 * 1024;
+pub(crate) const MAX_PENDING_ACCESS_UNIT_BYTES: usize = 32 * 1024 * 1024;
 
 /// Byte-stream access-unit parser shared by the encoded ingest sources.
 ///
@@ -430,7 +430,7 @@ pub fn access_unit_from_annex_b(
 }
 
 /// Creates an Annex-B access unit from raw NAL units.
-fn access_unit_from_nalus(
+pub(crate) fn access_unit_from_nalus(
     codec: EncodedVideoCodec,
     nal_units: &[&[u8]],
     timestamp_us: i64,
@@ -481,12 +481,21 @@ fn is_keyframe_nalus(
     }
 }
 
-fn h264_nal_type(nal: &[u8]) -> Result<u8, H26xParseError> {
+pub(crate) const H264_NAL_IDR: u8 = 5;
+pub(crate) const H264_NAL_SPS: u8 = 7;
+pub(crate) const H264_NAL_PPS: u8 = 8;
+pub(crate) const H265_NAL_IDR_W_RADL: u8 = 19;
+pub(crate) const H265_NAL_IDR_N_LP: u8 = 20;
+pub(crate) const H265_NAL_VPS: u8 = 32;
+pub(crate) const H265_NAL_SPS: u8 = 33;
+pub(crate) const H265_NAL_PPS: u8 = 34;
+
+pub(crate) fn h264_nal_type(nal: &[u8]) -> Result<u8, H26xParseError> {
     let header = nal.first().ok_or(H26xParseError::EmptyPayload)?;
     Ok(header & 0x1f)
 }
 
-fn h265_nal_type(nal: &[u8]) -> Result<u8, H26xParseError> {
+pub(crate) fn h265_nal_type(nal: &[u8]) -> Result<u8, H26xParseError> {
     if nal.is_empty() {
         return Err(H26xParseError::EmptyPayload);
     }
@@ -635,7 +644,7 @@ fn find_start_code(bytes: &[u8]) -> Option<(usize, usize)> {
     None
 }
 
-fn avc_nalus(payload: &[u8], nal_length_size: u8) -> Result<Vec<&[u8]>, H26xParseError> {
+pub(crate) fn avc_nalus(payload: &[u8], nal_length_size: u8) -> Result<Vec<&[u8]>, H26xParseError> {
     let ranges = avc_nal_ranges(payload, nal_length_size, true)?;
     if ranges.is_empty() {
         return Err(H26xParseError::EmptyPayload);

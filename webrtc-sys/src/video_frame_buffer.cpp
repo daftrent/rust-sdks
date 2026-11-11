@@ -21,6 +21,26 @@
 
 namespace livekit_ffi {
 
+namespace {
+
+class DmaBufVideoFrameBufferWithReleaseHook
+    : public livekit::DmaBufVideoFrameBuffer {
+ public:
+  DmaBufVideoFrameBufferWithReleaseHook(
+      int dmabuf_fd,
+      int width,
+      int height,
+      livekit::DmaBufPixelFormat pixel_format,
+      rust::Box<DmaBufReleaseHook> on_release)
+      : DmaBufVideoFrameBuffer(dmabuf_fd, width, height, pixel_format),
+        on_release_(std::move(on_release)) {}
+
+ private:
+  rust::Box<DmaBufReleaseHook> on_release_;
+};
+
+}  // namespace
+
 VideoFrameBuffer::VideoFrameBuffer(
     webrtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer)
     : buffer_(std::move(buffer)) {}
@@ -360,21 +380,28 @@ std::unique_ptr<NV12Buffer> new_nv12_buffer(int width,
 }
 
 std::unique_ptr<VideoFrameBuffer> new_native_buffer_from_dmabuf(
-    int dmabuf_fd,
-    int width,
-    int height,
-    int pixel_format) {
+    int32_t dmabuf_fd,
+    uint32_t width,
+    uint32_t height,
+    int32_t pixel_format,
+    rust::Box<DmaBufReleaseHook> on_release) {
   return std::make_unique<VideoFrameBuffer>(
-      webrtc::make_ref_counted<livekit::DmaBufVideoFrameBuffer>(
-          dmabuf_fd, width, height,
-          static_cast<livekit::DmaBufPixelFormat>(pixel_format)));
+      webrtc::make_ref_counted<DmaBufVideoFrameBufferWithReleaseHook>(
+          static_cast<int>(dmabuf_fd), static_cast<int>(width),
+          static_cast<int>(height),
+          static_cast<livekit::DmaBufPixelFormat>(pixel_format),
+          std::move(on_release)));
 }
 
-int native_buffer_to_dmabuf_fd(
+int32_t native_buffer_dmabuf_fd(
     const std::unique_ptr<VideoFrameBuffer>& buffer) {
   auto* dmabuf =
       livekit::DmaBufVideoFrameBuffer::FromNative(buffer->get().get());
   return dmabuf ? dmabuf->dmabuf_fd() : -1;
+}
+
+void remove_dmabuf_surface_cache_entry(int32_t dmabuf_fd) {
+  livekit::RemoveDmaBufSurfaceCacheEntry(dmabuf_fd);
 }
 
 #ifndef __APPLE__

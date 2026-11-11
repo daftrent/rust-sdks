@@ -28,6 +28,10 @@ pub mod ffi {
         NV12,
     }
 
+    extern "Rust" {
+        type DmaBufReleaseHook;
+    }
+
     unsafe extern "C++" {
         include!("livekit/video_frame_buffer.h");
 
@@ -166,16 +170,20 @@ pub mod ffi {
         ///
         /// The buffer does not take ownership of the fd: it must remain valid
         /// until every frame captured from it has been consumed downstream.
-        fn new_native_buffer_from_dmabuf(
+        unsafe fn new_native_buffer_from_dmabuf(
             dmabuf_fd: i32,
-            width: i32,
-            height: i32,
+            width: u32,
+            height: u32,
             pixel_format: i32,
+            on_release: Box<DmaBufReleaseHook>,
         ) -> UniquePtr<VideoFrameBuffer>;
 
         /// Returns the DMA-BUF fd backing this buffer, or `-1` if this buffer
         /// is not DMA-BUF backed.
-        fn native_buffer_to_dmabuf_fd(buffer: &UniquePtr<VideoFrameBuffer>) -> i32;
+        fn native_buffer_dmabuf_fd(buffer: &UniquePtr<VideoFrameBuffer>) -> i32;
+
+        /// Removes a cached DMA-BUF surface before its fd can be reused.
+        fn remove_dmabuf_surface_cache_entry(dmabuf_fd: i32);
 
         unsafe fn yuv_to_vfb(yuv: *const PlanarYuvBuffer) -> *const VideoFrameBuffer;
         unsafe fn biyuv_to_vfb(yuv: *const BiplanarYuvBuffer) -> *const VideoFrameBuffer;
@@ -190,6 +198,24 @@ pub mod ffi {
         unsafe fn nv12_to_biyuv8(nv12: *const NV12Buffer) -> *const BiplanarYuv8Buffer;
 
         fn _unique_video_frame_buffer() -> UniquePtr<VideoFrameBuffer>;
+    }
+}
+
+/// Runs a producer release callback when WebRTC drops its last frame reference.
+pub struct DmaBufReleaseHook(Option<Box<dyn FnOnce() + Send>>);
+
+impl DmaBufReleaseHook {
+    /// Creates a release hook for a borrowed DMA-BUF.
+    pub fn new(on_release: impl FnOnce() + Send + 'static) -> Self {
+        Self(Some(Box::new(on_release)))
+    }
+}
+
+impl Drop for DmaBufReleaseHook {
+    fn drop(&mut self) {
+        if let Some(on_release) = self.0.take() {
+            on_release();
+        }
     }
 }
 

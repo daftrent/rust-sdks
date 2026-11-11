@@ -223,8 +223,15 @@ std::unique_ptr<NV12Buffer> new_nv12_buffer(int width, int height, int stride_y,
 std::unique_ptr<VideoFrameBuffer> new_native_buffer_from_platform_image_buffer(PlatformImageBuffer *buffer);
 PlatformImageBuffer* native_buffer_to_platform_image_buffer(const std::unique_ptr<VideoFrameBuffer> &);
 
-std::unique_ptr<VideoFrameBuffer> new_native_buffer_from_dmabuf(int dmabuf_fd, int width, int height, int pixel_format);
-int native_buffer_to_dmabuf_fd(const std::unique_ptr<VideoFrameBuffer> &);
+std::unique_ptr<VideoFrameBuffer> new_native_buffer_from_dmabuf(
+    int32_t dmabuf_fd,
+    uint32_t width,
+    uint32_t height,
+    int32_t pixel_format,
+    rust::Box<DmaBufReleaseHook> on_release);
+int32_t native_buffer_dmabuf_fd(
+    const std::unique_ptr<VideoFrameBuffer>& buffer);
+void remove_dmabuf_surface_cache_entry(int32_t dmabuf_fd);
 
 static const VideoFrameBuffer* yuv_to_vfb(const PlanarYuvBuffer* yuv) {
   return yuv;

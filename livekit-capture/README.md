@@ -56,9 +56,15 @@ named `source-<module>`. Each module documents its source.
 
 | Feature            | Source                 | Kind    |
 | ------------------ | ---------------------- | ------- |
+| `source-device`    | `DeviceVideoSource`    | pixel   |
 | `source-gstreamer` | `GStreamerVideoSource` | encoded |
+| `source-rtsp`      | `RtspVideoSource`      | encoded |
 | `source-pattern`   | `PatternVideoSource`   | pixel   |
 | `source-clock`     | `ClockVideoSource`     | pixel   |
+
+`source-device-argus` extends `DeviceVideoSource` with an NVIDIA Jetson CSI
+backend using libargus and zero-copy NV12 DMA buffers. `source-rtsp-tls`
+adds `rtsps://` support to the RTSP source.
 
 ## Custom sources
 

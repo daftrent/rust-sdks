@@ -33,6 +33,31 @@
 
 namespace livekit {
 
+#ifdef USE_JETSON_VIDEO_CODEC
+namespace {
+// Cache NvBufSurface pointers per fd to avoid calling NvBufSurfaceFromFd on
+// every frame.  On some JetPack versions the fd-to-surface lookup prints
+// spurious "Wrong buffer index" warnings.  The surface pointer is stable for
+// the lifetime of the DMA buffer, so caching is safe as long as entries are
+// evicted via RemoveDmaBufSurfaceCacheEntry when the buffer is destroyed
+// (fd numbers get recycled by the OS).
+std::mutex g_surface_cache_mutex;
+std::unordered_map<int, NvBufSurface*>& SurfaceCache() {
+  static std::unordered_map<int, NvBufSurface*> cache;
+  return cache;
+}
+}  // namespace
+#endif
+
+void RemoveDmaBufSurfaceCacheEntry(int dmabuf_fd) {
+#ifdef USE_JETSON_VIDEO_CODEC
+  std::lock_guard<std::mutex> lock(g_surface_cache_mutex);
+  SurfaceCache().erase(dmabuf_fd);
+#else
+  (void)dmabuf_fd;
+#endif
+}
+
 DmaBufVideoFrameBuffer::DmaBufVideoFrameBuffer(int dmabuf_fd,
                                                  int width,
                                                  int height,
@@ -57,25 +82,16 @@ int DmaBufVideoFrameBuffer::height() const {
 webrtc::scoped_refptr<webrtc::I420BufferInterface>
 DmaBufVideoFrameBuffer::ToI420() {
 #ifdef USE_JETSON_VIDEO_CODEC
-  // The NvBufSurface* symbols are lazily bound and abort the process if
-  // invoked while the Jetson userspace libraries are absent.
   if (!lk_jetson_runtime_libs_available()) {
     RTC_LOG(LS_ERROR) << "DmaBufVideoFrameBuffer::ToI420: Jetson multimedia "
                          "libraries are not available";
     return nullptr;
   }
 
-  // Cache NvBufSurface pointers per fd to avoid calling NvBufSurfaceFromFd
-  // on every frame.  On some JetPack versions the fd-to-surface lookup
-  // prints spurious "Wrong buffer index" warnings.  The surface pointer is
-  // stable for the lifetime of the DMA buffer (freed only when the Argus
-  // session is destroyed), so caching is safe.
-  static std::mutex cache_mutex;
-  static std::unordered_map<int, NvBufSurface*> surface_cache;
-
   NvBufSurface* surface = nullptr;
   {
-    std::lock_guard<std::mutex> lock(cache_mutex);
+    std::lock_guard<std::mutex> lock(g_surface_cache_mutex);
+    auto& surface_cache = SurfaceCache();
     auto cache_it = surface_cache.find(dmabuf_fd_);
     if (cache_it != surface_cache.end()) {
       surface = cache_it->second;

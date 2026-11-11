@@ -19,6 +19,7 @@ members = [
     "livekit-signaling",
     "livekit-wakeword",
     "tools/bindgens",
+    "libargus-sys",
     "libwebrtc",
     "soxr-sys",
     "yuv-sys",
@@ -54,6 +55,7 @@ license = "Apache-2.0"
 [workspace.dependencies]
 device-info = { version = "0.1.1", path = "device-info" }
 imgproc = { version = "0.3.20", path = "imgproc" }
+libargus-sys = { version = "0.1.0", path = "libargus-sys" }
 libwebrtc = { version = "0.4.0", path = "libwebrtc" }
 livekit = { version = "0.10.1", path = "livekit" }
 livekit-api = { version = "0.10.1", path = "livekit-api" }
